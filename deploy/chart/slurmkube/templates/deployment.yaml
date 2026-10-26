@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "slurmkube.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "slurmkube.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "slurmkube.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "slurmkube.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ toYaml .Values.config | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "slurmkube.fullname" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: slurmkube
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --config=/etc/slurmkube/config.yaml
+            - --metrics-addr=:8080
+            - --health-addr=:8081
+            - --leader-elect={{ .Values.leaderElect }}
+            - --log-level={{ .Values.logLevel }}
+            {{- if .Values.allowedSlurmdImages }}
+            - --allowed-slurmd-images={{ join "," .Values.allowedSlurmdImages }}
+            {{- end }}
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - name: metrics
+              containerPort: 8080
+            - name: health
+              containerPort: 8081
+          livenessProbe:
+            httpGet: {path: /healthz, port: health}
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: {path: /readyz, port: health}
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/slurmkube
+              readOnly: true
+            {{- if .Values.slurmTokenSecret }}
+            - name: slurm-token
+              mountPath: /var/run/secrets/slurm
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "slurmkube.fullname" . }}-config
+        {{- if .Values.slurmTokenSecret }}
+        - name: slurm-token
+          secret:
+            secretName: {{ .Values.slurmTokenSecret }}
+            defaultMode: 0440
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

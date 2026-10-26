@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "slurmkube.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "slurmkube.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "slurmkube.fullname" . }}
+  namespace: {{ include "slurmkube.namespace" . }}
+  labels:
+    {{- include "slurmkube.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["jobset.x-k8s.io"]
+    resources: ["jobsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["kueue.x-k8s.io"]
+    resources: ["workloads"]
+    verbs: ["get", "list", "watch", "patch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "patch"]
+  # slurmd pods: stamped with their port and clearance; deleted when their
+  # node record is stale or their slurmd never registered.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "slurmkube.fullname" . }}
+  namespace: {{ include "slurmkube.namespace" . }}
+  labels:
+    {{- include "slurmkube.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "slurmkube.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "slurmkube.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "slurmkube.fullname" . }}-leader
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "slurmkube.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "slurmkube.fullname" . }}-leader
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "slurmkube.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "slurmkube.fullname" . }}-leader
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "slurmkube.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+{{- if .Values.rbac.nodes }}
+---
+# The fencer reads Node conditions to decide whether a vanished pod's host
+# can still run it (docs/fencing.md).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "slurmkube.fullname" . }}-nodes
+  labels:
+    {{- include "slurmkube.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "slurmkube.fullname" . }}-nodes
+  labels:
+    {{- include "slurmkube.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "slurmkube.fullname" . }}-nodes
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "slurmkube.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

@@ -1,0 +1,43 @@
+{
+ "array_job_id": {
+  "infinite": false,
+  "number": 1010,
+  "set": true
+ },
+ "array_task_string": "0-3%2",
+ "comment": "",
+ "cpus_per_task": {
+  "infinite": false,
+  "number": 2,
+  "set": true
+ },
+ "features": "",
+ "hold": true,
+ "job_id": 1010,
+ "job_state": [
+  "PENDING"
+ ],
+ "memory_per_cpu": {
+  "infinite": false,
+  "number": 1024,
+  "set": true
+ },
+ "name": "arr",
+ "node_count": {
+  "infinite": false,
+  "number": 1,
+  "set": true
+ },
+ "partition": "k8s",
+ "state_reason": "JobHeldUser",
+ "submit_time": {
+  "infinite": false,
+  "number": 1792742000,
+  "set": true
+ },
+ "tasks": {
+  "infinite": false,
+  "number": 1,
+  "set": true
+ }
+}

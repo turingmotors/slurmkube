@@ -1,0 +1,67 @@
+# SlurmKube chart values. Everything site-specific is here; the controller
+# itself knows no host names.
+image:
+  repository: ghcr.io/turingmotors/slurmkube
+  tag: ""          # defaults to the chart's appVersion
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+replicaCount: 1    # leader election keeps one active replica
+leaderElect: true
+logLevel: info
+
+# Secret (in the release namespace) with the slurmctld JWT signing key
+# (key "jwt.key") or a long-lived token ("token"), mounted at
+# /var/run/secrets/slurm. Leave empty to mount nothing.
+slurmTokenSecret: ""
+
+# Only slurmd images with one of these prefixes are accepted; empty: any.
+allowedSlurmdImages: []
+
+resources:
+  requests: {cpu: 100m, memory: 128Mi}
+  limits: {cpu: "1", memory: 512Mi}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}
+
+# Namespaced RBAC covers JobSets, Jobs, pods, Workloads, events and the
+# leader Lease. The fencer reads Nodes (cluster-scoped); set to false to
+# skip the ClusterRole and use fencing.mode trustKubernetes.
+rbac:
+  nodes: true
+
+# The controller's configuration (config/example.yaml documents every key).
+config:
+  slurm:
+    restURL: https://slurmrestd.slurm.svc:6820
+    jwtKeyFile: /var/run/secrets/slurm/jwt.key
+    jwtUser: slurmkube
+    jwtLifetime: 10m
+  namespace: ""      # defaults to the release namespace
+  localQueue: main
+  partitions:
+    - name: k8s
+      priorityClass: normal-priority
+  claim:
+    heldComment: "slurmkube: held for admission"
+  slurmd:
+    image: ghcr.io/slinkyproject/slurmd:26.05
+    confServer: slurmctld.slurm.svc:6817
+    authSecretName: slurm-auth
+    # nodeNamePrefix: slurmkube-w   # dynamic node names; the site's gres.conf must match
+    advertiseHostResources: true
+    threadsPerCore: 2
+    nodePorts:
+      base: 63000
+      size: 2000
+      perJob: 32
+    podTemplate:
+      spec:
+        hostNetwork: true
+        dnsPolicy: ClusterFirstWithHostNet
+  recovery:
+    pollInterval: 10s
+  fencing:
+    mode: manual

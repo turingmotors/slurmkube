@@ -1,0 +1,40 @@
+{
+ "comment": "",
+ "cpus_per_task": {
+  "infinite": false,
+  "number": 52,
+  "set": true
+ },
+ "cpus_per_tres": "gpu:26",
+ "features": "",
+ "hold": true,
+ "job_id": 1005,
+ "job_state": [
+  "PENDING"
+ ],
+ "memory_per_node": {
+  "infinite": false,
+  "number": 501760,
+  "set": true
+ },
+ "memory_per_tres": "gpu:250880",
+ "name": "gpus2",
+ "node_count": {
+  "infinite": false,
+  "number": 1,
+  "set": true
+ },
+ "partition": "k8s",
+ "state_reason": "JobHeldUser",
+ "submit_time": {
+  "infinite": false,
+  "number": 1792742000,
+  "set": true
+ },
+ "tasks": {
+  "infinite": false,
+  "number": 1,
+  "set": true
+ },
+ "tres_per_job": "gres/gpu:2"
+}

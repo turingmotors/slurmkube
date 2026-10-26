@@ -1,0 +1,81 @@
+# SlurmKube configuration. Every key is documented; values here are
+# examples for a cluster where slurmctld runs outside Kubernetes and the
+# slurmd pods share hosts under hostNetwork.
+slurm:
+  restURL: https://slurmrestd.slurm.svc:6820
+  # Either a long-lived token file (X-SLURM-USER-TOKEN) ...
+  # tokenFile: /var/run/secrets/slurm/token
+  # ... or slurmctld's JWT signing key, from which short-lived tokens are
+  # minted for jwtUser (the account slurmrestd acts as; it needs operator
+  # rights for node updates).
+  jwtKeyFile: /var/run/secrets/slurm/jwt.key
+  jwtUser: slurmkube
+  jwtLifetime: 10m
+  # allowInsecureHTTP: true   # plain http:// inside the cluster only
+  # caCertFile: /etc/slurmkube/ca.crt
+  requestTimeout: 30s
+  requestsPerSecond: 0        # 0: unlimited
+
+namespace: slurm-jobs          # JobSets and slurmd pods live here
+localQueue: main               # Kueue LocalQueue in that namespace
+
+# Partitions this instance manages. Jobs of other partitions are never
+# touched. Each maps to a Kueue WorkloadPriorityClass.
+partitions:
+  - name: k8s
+    priorityClass: normal-priority
+
+claim:
+  # The comment a JobSubmit plugin stamps on jobs it holds for SlurmKube.
+  # A job is claimed only with this comment (or one SlurmKube wrote).
+  heldComment: "slurmkube: held for admission"
+  # Another controller running beside SlurmKube during a hand-over: a job
+  # that already has one of its JobSets is never claimed, even if the
+  # job's comment was reset.
+  otherManagers: []
+  #  - name: other
+  #    labels: {other.example.com/managed-by: other}
+  #    jobIDLabel: other.example.com/slurm-job-id
+
+slurmd:
+  image: ghcr.io/slinkyproject/slurmd:26.05
+  confServer: slurmctld.slurm.svc:6817     # configless slurmd
+  authSecretName: slurm-auth               # Secret with slurm.key
+  nodeFeatures: [slurmkube]                # extra features every node advertises
+  nodeNamePrefix: slurmkube-w              # dynamic nodes are <prefix><index>-<jobID>; gres.conf must match
+  advertiseHostResources: true             # host topology + TaskPluginParam=SlurmdSpecOverride, CPU Manager static (README)
+  gpuDevicesFromDevicePlugin: true
+  threadsPerCore: 2
+  memoryOverheadMB: 256                    # headroom for slurmd itself
+  nodeIdentity: true                       # --extra <pod UID>: the record names its pod
+  maxDynamicNodes: 0                       # slurmctld MaxNodeCount - static nodes; 0: unknown
+  registrationTimeout: 3m
+  nodeCapacity: {cpu: 214, memoryMB: 2055628, gpus: 8}
+  nodePorts: {base: 63000, size: 2000, perJob: 32}
+  gresDeviceLinks: {dir: /run/slurmkube/gres, count: 8}
+  podTemplate:
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      runtimeClassName: nvidia
+      nodeSelector:
+        slurmkube.io/pool: "true"
+
+array:
+  maxPods: 16
+  podCapacity: {cpu: 26, memoryMB: 256953, gpus: 1}
+
+recovery:
+  pollInterval: 10s
+  vanishedOwnerGrace: 15s
+  orphanPolls: 3
+  sweepOrphanedNodes: true
+  cancelOnJobSetLoss: false
+  # A job the translation refuses (typed GPU, heterogeneous job, ...) is
+  # held with the reason in its comment; true cancels it instead.
+  cancelRefusedJobs: false
+  keepFailedJobSetsFor: 1h
+
+fencing:
+  mode: manual                 # or trustKubernetes
+  confirmAnnotation: slurmkube.io/fenced-hosts

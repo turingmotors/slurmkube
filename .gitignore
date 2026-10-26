@@ -1,0 +1,8 @@
+/bin/
+/dist/
+*.test
+*.out
+coverage.*
+/values-*.yaml
+/.envtest/
+.DS_Store

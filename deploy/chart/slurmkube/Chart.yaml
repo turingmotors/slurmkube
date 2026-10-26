@@ -1,0 +1,10 @@
+apiVersion: v2
+name: slurmkube
+description: Runs Slurm jobs on Kubernetes as JobSets of dynamic slurmd nodes, admitted by Kueue.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [slurm, kueue, jobset, hpc]
+home: https://github.com/turingmotors/slurmkube
+sources:
+  - https://github.com/turingmotors/slurmkube

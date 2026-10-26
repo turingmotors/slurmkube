@@ -1,0 +1,72 @@
+{
+  "array-0-3-c2": {
+    "conf": "'Features=slurmkube-pin-1010 Port=$(SLURMKUBE_NODE_PORT)'",
+    "cpu": 4,
+    "gpus": "0",
+    "memoryMi": 4352,
+    "pods": 1
+  },
+  "cpu-N2-tpn1-c100": {
+    "conf": "'Features=slurmkube-pin-1003 Port=$(SLURMKUBE_NODE_PORT)'",
+    "cpu": 100,
+    "gpus": "0",
+    "memoryMi": 102656,
+    "pods": 2
+  },
+  "cpu-c2": {
+    "conf": "'Features=slurmkube-pin-1001 Port=$(SLURMKUBE_NODE_PORT)'",
+    "cpu": 2,
+    "gpus": "0",
+    "memoryMi": 2304,
+    "pods": 1
+  },
+  "cpu-n4": {
+    "conf": "'Features=slurmkube-pin-1002 Port=$(SLURMKUBE_NODE_PORT)'",
+    "cpu": 4,
+    "gpus": "0",
+    "memoryMi": 4352,
+    "pods": 1
+  },
+  "cpus-per-gpu8-gpu1": {
+    "conf": "'Features=slurmkube-pin-1007 Gres=gpu:1 Port=$(SLURMKUBE_NODE_PORT)'",
+    "cpu": 8,
+    "gpus": "1",
+    "memoryMi": 251136,
+    "pods": 1
+  },
+  "gpu1-default": {
+    "conf": "'Features=slurmkube-pin-1004 Gres=gpu:1 Port=$(SLURMKUBE_NODE_PORT)'",
+    "cpu": 26,
+    "gpus": "1",
+    "memoryMi": 251136,
+    "pods": 1
+  },
+  "gpu1-mem32G": {
+    "conf": "'Features=slurmkube-pin-1008 Gres=gpu:1 Port=$(SLURMKUBE_NODE_PORT)'",
+    "cpu": 4,
+    "gpus": "1",
+    "memoryMi": 251136,
+    "pods": 1
+  },
+  "gpu2-gpus": {
+    "conf": "'Features=slurmkube-pin-1005 Gres=gpu:2 Port=$(SLURMKUBE_NODE_PORT)'",
+    "cpu": 52,
+    "gpus": "2",
+    "memoryMi": 502016,
+    "pods": 1
+  },
+  "gpu8": {
+    "conf": "'Features=slurmkube-pin-1009 Gres=gpu:8 Port=$(SLURMKUBE_NODE_PORT)'",
+    "cpu": 208,
+    "gpus": "8",
+    "memoryMi": 2007296,
+    "pods": 1
+  },
+  "gpus-per-task1-n2": {
+    "conf": "'Features=slurmkube-pin-1006 Gres=gpu:2 Port=$(SLURMKUBE_NODE_PORT)'",
+    "cpu": 52,
+    "gpus": "2",
+    "memoryMi": 502016,
+    "pods": 1
+  }
+}
